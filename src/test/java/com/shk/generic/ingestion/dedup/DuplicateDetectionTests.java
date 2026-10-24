@@ -1,6 +1,7 @@
 package com.shk.generic.ingestion.dedup;
 
 import com.shk.generic.AbstractIntegrationTest;
+import com.shk.generic.TestTokens;
 import com.shk.generic.ingestion.IngestionResult;
 import com.shk.generic.ingestion.IngestionService;
 import com.shk.generic.ingestion.IngestionStatus;
@@ -142,9 +143,9 @@ class DuplicateDetectionTests extends AbstractIntegrationTest {
         byte[] body = uniqueText().getBytes(StandardCharsets.UTF_8);
         var file = new MockMultipartFile("file", "notes.md", "text/markdown", body);
 
-        assertThat(mvc.post().uri("/api/ingest/file").multipart().file(file))
+        assertThat(mvc.post().uri("/api/ingest/file").with(TestTokens.editor()).multipart().file(file))
                 .hasStatusOk().bodyJson().extractingPath("$.status").isEqualTo("INGESTED");
-        assertThat(mvc.post().uri("/api/ingest/file").multipart().file(file).param("categories", "other"))
+        assertThat(mvc.post().uri("/api/ingest/file").with(TestTokens.editor()).multipart().file(file).param("categories", "other"))
                 .hasStatusOk().bodyJson().extractingPath("$.status").isEqualTo("DUPLICATE");
     }
 
@@ -152,7 +153,7 @@ class DuplicateDetectionTests extends AbstractIntegrationTest {
     void extractionFailuresDoNotRegisterAnything() {
         long before = jdbc.sql("SELECT count(*) FROM document_registry").query(Long.class).single();
 
-        assertThat(mvc.post().uri("/api/ingest/text").contentType(MediaType.APPLICATION_JSON)
+        assertThat(mvc.post().uri("/api/ingest/text").with(TestTokens.editor()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"x\",\"text\":\"%PDF-garbage\",\"format\":\"PDF\"}"))
                 .hasStatus(422);
 

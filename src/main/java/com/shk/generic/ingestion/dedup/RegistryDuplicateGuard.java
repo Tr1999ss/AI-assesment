@@ -29,7 +29,8 @@ public class RegistryDuplicateGuard implements DuplicateGuard {
         IngestionRequest request = document.request();
         // Categories stored here are the caller's request; the store stage records the final set.
         DocumentRegistry.Claim claim = registry.claim(new NewRegistration(hasher.hash(document),
-                request.filename(), request.format(), request.channel(), List.copyOf(request.requestedCategories())));
+                request.filename(), request.format(), request.channel(),
+                List.copyOf(request.requestedCategories()), request.submittedBy()));
 
         return claim.created()
                 ? new DedupOutcome.Fresh(claim.document())

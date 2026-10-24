@@ -1,6 +1,7 @@
 package com.shk.generic.category.web;
 
 import com.shk.generic.AbstractIntegrationTest;
+import com.shk.generic.TestTokens;
 import com.shk.generic.ingestion.IngestionService;
 import com.shk.generic.ingestion.intake.IngestionRequest;
 import com.shk.generic.ingestion.intake.IntakeChannel;
@@ -25,7 +26,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CategoryAdminTests extends AbstractIntegrationTest {
 
     private static final String ADMIN = "/api/admin/categories";
-    private static final String KEY_HEADER = "X-Admin-Api-Key";
 
     @Autowired
     MockMvcTester mvc;
@@ -45,12 +45,11 @@ class CategoryAdminTests extends AbstractIntegrationTest {
     }
 
     @Test
-    void adminEndpointsRequireTheApiKey() {
+    void adminEndpointsRequireTheAdminRole() {
         assertThat(mvc.get().uri(ADMIN)).hasStatus(401);
-        assertThat(mvc.get().uri(ADMIN).header(KEY_HEADER, "wrong")).hasStatus(401)
-                .bodyText().contains("X-Admin-Api-Key");
-        assertThat(mvc.get().uri(ADMIN).header(KEY_HEADER, ADMIN_KEY)).hasStatusOk();
-        assertThat(mvc.get().uri("/api/categories")).as("public listing needs no key").hasStatusOk();
+        assertThat(mvc.get().uri(ADMIN).with(TestTokens.editor())).hasStatus(403);
+        assertThat(mvc.get().uri(ADMIN).with(TestTokens.admin())).hasStatusOk();
+        assertThat(mvc.get().uri("/api/categories")).as("public listing needs no token").hasStatusOk();
     }
 
     @Test
@@ -89,8 +88,8 @@ class CategoryAdminTests extends AbstractIntegrationTest {
         patch(name, "{\"active\":false}");
 
         assertThat(mvc.get().uri("/api/categories")).bodyText().doesNotContain(name);
-        assertThat(mvc.get().uri(ADMIN + "?includeInactive=true").header(KEY_HEADER, ADMIN_KEY)).bodyText().contains(name);
-        assertThat(mvc.post().uri("/api/ingest/text").contentType(MediaType.APPLICATION_JSON)
+        assertThat(mvc.get().uri(ADMIN + "?includeInactive=true").with(TestTokens.admin())).bodyText().contains(name);
+        assertThat(mvc.post().uri("/api/ingest/text").with(TestTokens.editor()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"x\",\"text\":\"" + UUID.randomUUID() + "\",\"categories\":[\"" + name + "\"]}"))
                 .hasStatus(400);
     }
@@ -112,22 +111,22 @@ class CategoryAdminTests extends AbstractIntegrationTest {
 
         jdbc.sql("DELETE FROM document_registry WHERE :n = ANY(categories)").param("n", name).update();
         assertThat(delete(name)).hasStatus(204);
-        assertThat(mvc.get().uri(ADMIN + "/" + name).header(KEY_HEADER, ADMIN_KEY)).hasStatus(404);
+        assertThat(mvc.get().uri(ADMIN + "/" + name).with(TestTokens.admin())).hasStatus(404);
         assertThat(delete(name)).hasStatus(404);
     }
 
     private MvcTestResult create(String categoryName, String description) {
-        return mvc.post().uri(ADMIN).header(KEY_HEADER, ADMIN_KEY).contentType(MediaType.APPLICATION_JSON)
+        return mvc.post().uri(ADMIN).with(TestTokens.admin()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"name\":\"" + categoryName + "\",\"description\":\"" + description + "\"}").exchange();
     }
 
     private MvcTestResult patch(String categoryName, String body) {
-        return mvc.patch().uri(ADMIN + "/" + categoryName).header(KEY_HEADER, ADMIN_KEY)
+        return mvc.patch().uri(ADMIN + "/" + categoryName).with(TestTokens.admin())
                 .contentType(MediaType.APPLICATION_JSON).content(body).exchange();
     }
 
     private MvcTestResult delete(String categoryName) {
-        return mvc.delete().uri(ADMIN + "/" + categoryName).header(KEY_HEADER, ADMIN_KEY).exchange();
+        return mvc.delete().uri(ADMIN + "/" + categoryName).with(TestTokens.admin()).exchange();
     }
 
     private static IngestionRequest request(List<String> categories) {

@@ -88,7 +88,7 @@ class DefaultStorageStageTest {
 
     private RegisteredDocument registration(RegistrationStatus status) {
         return new RegisteredDocument(id, "a".repeat(64), "a.txt", SourceFormat.TEXT, IntakeChannel.JSON_TEXT,
-                List.of(), null, null, status, Instant.now(), Instant.now());
+                List.of(), null, null, null, status, Instant.now(), Instant.now());
     }
 
     private static final class FakeChunkStore implements ChunkStore {

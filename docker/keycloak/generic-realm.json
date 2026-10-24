@@ -1,0 +1,106 @@
+{
+  "realm": "generic",
+  "enabled": true,
+  "sslRequired": "external",
+  "accessTokenLifespan": 300,
+  "roles": {
+    "realm": [
+      {
+        "name": "kb-reader",
+        "description": "Search the knowledge base and ask questions"
+      },
+      {
+        "name": "kb-editor",
+        "description": "kb-reader plus ingesting documents",
+        "composite": true,
+        "composites": { "realm": ["kb-reader"] }
+      },
+      {
+        "name": "kb-admin",
+        "description": "kb-editor plus category administration",
+        "composite": true,
+        "composites": { "realm": ["kb-editor"] }
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "generic-api",
+      "name": "Generic knowledge base API",
+      "description": "The resource server. Only used as the token audience; it never requests tokens.",
+      "enabled": true,
+      "publicClient": false,
+      "bearerOnly": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false
+    },
+    {
+      "clientId": "generic-cli",
+      "name": "Developer tools (Postman, curl, MCP clients)",
+      "description": "Public client. Password grant is enabled for local development only.",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "redirectUris": ["http://localhost:*", "http://127.0.0.1:*", "https://oauth.pstmn.io/v1/callback"],
+      "webOrigins": ["+"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "protocolMappers": [
+        {
+          "name": "generic-api audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "generic-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "email": "alice@example.com",
+      "firstName": "Alice",
+      "lastName": "Reader",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "alice", "temporary": false }],
+      "realmRoles": ["kb-reader"]
+    },
+    {
+      "username": "bob",
+      "email": "bob@example.com",
+      "firstName": "Bob",
+      "lastName": "Editor",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "bob", "temporary": false }],
+      "realmRoles": ["kb-editor"]
+    },
+    {
+      "username": "carol",
+      "email": "carol@example.com",
+      "firstName": "Carol",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "carol", "temporary": false }],
+      "realmRoles": ["kb-admin"]
+    },
+    {
+      "username": "dave",
+      "email": "dave@example.com",
+      "firstName": "Dave",
+      "lastName": "NoAccess",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [{ "type": "password", "value": "dave", "temporary": false }],
+      "realmRoles": []
+    }
+  ]
+}

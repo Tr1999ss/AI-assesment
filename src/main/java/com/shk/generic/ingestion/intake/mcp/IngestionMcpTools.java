@@ -4,6 +4,8 @@ import com.shk.generic.ingestion.IngestionResult;
 import com.shk.generic.ingestion.intake.IntakeGateway;
 import org.springframework.ai.mcp.annotation.McpTool;
 import org.springframework.ai.mcp.annotation.McpToolParam;
+import com.shk.generic.security.Roles;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -19,6 +21,7 @@ public class IngestionMcpTools {
         this.adapter = adapter;
     }
 
+    @PreAuthorize(Roles.HAS_EDITOR)
     @McpTool(name = "ingest_document",
             description = "Add a document to the knowledge base. Send plain/Markdown/JSON content as 'text', "
                     + "or binary files such as PDF as 'base64'. Omit 'categories' to have them classified automatically.")

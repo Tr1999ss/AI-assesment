@@ -3,6 +3,7 @@ package com.shk.generic.retrieval.answer;
 import com.shk.generic.retrieval.RetrievalProperties;
 import com.shk.generic.retrieval.RetrievalUnavailableException;
 import com.shk.generic.retrieval.SearchHit;
+import com.shk.generic.retrieval.SearchResult;
 import com.shk.generic.retrieval.search.SearchService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -42,17 +43,26 @@ public class RagAnswerService implements AnswerService {
         this.properties = properties;
     }
 
+    /**
+     * The "not found" guard is mode-aware by construction: every retrieval leg applies its own native floor
+     * (cosine for semantic, the engine's rank for keyword) and later stages only reorder survivors, so an
+     * empty hit list means "nothing relevant" whatever the mode. Fused or reranked scores are never compared
+     * against the cosine threshold.
+     */
     @Override
     public Answer ask(Question question) {
-        List<SearchHit> hits = searchService.search(question.toSearchQuery()).hits();
+        SearchResult result = searchService.search(question.toSearchQuery());
+        List<SearchHit> hits = result.hits();
         if (hits.isEmpty()) {
-            return new Answer(question.text(), NO_SOURCES_ANSWER, false, List.of());
+            return new Answer(question.text(), NO_SOURCES_ANSWER, false, List.of(), result.applied(),
+                    result.warnings(), result.explain());
         }
         AnswerPrompt prompt = promptBuilder.build(question.text(), hits);
         String text = generate(prompt);
         List<Citation> citations = citedSources(text, prompt.sources());
         log.debug("Answered with {} source(s) offered, {} cited", prompt.sources().size(), citations.size());
-        return new Answer(question.text(), text, !citations.isEmpty(), citations);
+        return new Answer(question.text(), text, !citations.isEmpty(), citations, result.applied(),
+                result.warnings(), result.explain());
     }
 
     private String generate(AnswerPrompt prompt) {

@@ -2,6 +2,7 @@ package com.shk.generic.retrieval.web;
 
 import com.shk.generic.retrieval.RetrievalRequestException;
 import com.shk.generic.retrieval.RetrievalUnavailableException;
+import com.shk.generic.retrieval.options.InvalidRetrievalOptionException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -15,6 +16,17 @@ public class RetrievalExceptionHandler {
     @ExceptionHandler(RetrievalRequestException.class)
     public ProblemDetail handleBadRequest(RetrievalRequestException e) {
         return problem(HttpStatus.BAD_REQUEST, "Invalid search", e.getMessage());
+    }
+
+    /** Unknown, unavailable or out-of-range option: 400 naming the parameter and the valid values. */
+    @ExceptionHandler(InvalidRetrievalOptionException.class)
+    public ProblemDetail handleInvalidOption(InvalidRetrievalOptionException e) {
+        ProblemDetail problem = problem(HttpStatus.BAD_REQUEST, "Invalid retrieval option", e.getMessage());
+        problem.setProperty("parameter", e.parameter());
+        if (!e.validValues().isEmpty()) {
+            problem.setProperty("validValues", e.validValues());
+        }
+        return problem;
     }
 
     @ExceptionHandler(RetrievalUnavailableException.class)

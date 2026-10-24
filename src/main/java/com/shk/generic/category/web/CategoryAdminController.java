@@ -16,7 +16,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 
-/** Category management. Protected by the admin API key (see {@code AdminApiKeyFilter}). */
+/** Category management. Requires the kb-admin role (see {@code SecurityConfiguration}). */
 @RestController
 @RequestMapping("/api/admin/categories")
 public class CategoryAdminController {

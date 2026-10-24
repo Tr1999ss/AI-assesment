@@ -1,0 +1,21 @@
+{
+  "home": "README.md",
+  "pages": [
+    { "file": "README.md", "title": "Overview" },
+    {
+      "file": "docs/ARCHITECTURE.md",
+      "title": "Architecture",
+      "widgets": { "d-retrieval-toolkit": "retrieval-status" }
+    },
+    { "file": "docs/diagrams.md", "title": "Architecture diagrams" },
+    { "file": "docs/api.md", "title": "API reference" },
+    {
+      "title": "Security and operations",
+      "pages": [
+        { "file": "docs/USERS_AND_SECURITY.md", "title": "Users and security" },
+        { "file": "docs/REVIEW_GUIDE.md", "title": "Review guide" },
+        { "file": "docs/docs-viewer.md", "title": "Documentation viewer" }
+      ]
+    }
+  ]
+}

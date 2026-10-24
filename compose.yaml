@@ -16,5 +16,25 @@ services:
       timeout: 5s
       retries: 10
 
+  # Local identity provider. Dev mode only: in-memory H2 store, realm re-imported on each fresh start.
+  # Admin console: http://localhost:8180 (admin / admin). Realm: docker/keycloak/generic-realm.json
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.4
+    container_name: generic-keycloak
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HEALTH_ENABLED: "true"
+    ports:
+      - "8180:8080"
+    volumes:
+      - ./docker/keycloak:/opt/keycloak/data/import:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/9000 && printf 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
 volumes:
   pgdata:

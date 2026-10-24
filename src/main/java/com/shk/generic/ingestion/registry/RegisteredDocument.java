@@ -12,6 +12,7 @@ import java.util.UUID;
  * @param categories      while PENDING: what the caller requested; once INGESTED: final set, primary first
  * @param primaryCategory set once INGESTED
  * @param chunkCount      set once INGESTED
+ * @param ingestedBy      authenticated submitter; null for internal calls and pre-auth documents
  */
 public record RegisteredDocument(
         UUID id,
@@ -22,6 +23,7 @@ public record RegisteredDocument(
         List<String> categories,
         @Nullable String primaryCategory,
         @Nullable Integer chunkCount,
+        @Nullable String ingestedBy,
         RegistrationStatus status,
         Instant createdAt,
         Instant updatedAt

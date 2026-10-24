@@ -1,0 +1,26 @@
+# Standalone database for the 'paradedb' profile: Postgres 16 + pgvector + pg_search (BM25).
+# Separate project, port and volume, so the regular pgvector database (compose.yaml) is never touched.
+#   docker compose -f compose.paradedb.yaml up -d
+# Keycloak still comes from compose.yaml.
+name: generic-paradedb
+
+services:
+  db:
+    image: paradedb/paradedb:0.21.0-pg16
+    container_name: generic-db-paradedb
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata-paradedb:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d appdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata-paradedb:

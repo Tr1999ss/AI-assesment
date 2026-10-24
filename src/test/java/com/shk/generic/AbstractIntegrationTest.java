@@ -15,13 +15,10 @@ import org.springframework.context.annotation.Primary;
  */
 @SpringBootTest(properties = {
         "spring.ai.openai.api-key=test-key",
-        "ingestion.store.sweeper-enabled=false",
-        "admin.api-key=" + AbstractIntegrationTest.ADMIN_KEY
+        "ingestion.store.sweeper-enabled=false"
 })
 @Import({TestcontainersConfiguration.class, AbstractIntegrationTest.StubModelsConfiguration.class})
 public abstract class AbstractIntegrationTest {
-
-    protected static final String ADMIN_KEY = "test-admin-key";
 
     @Autowired
     protected StubChatModel chatModel;
@@ -36,7 +33,7 @@ public abstract class AbstractIntegrationTest {
     }
 
     @TestConfiguration(proxyBeanMethods = false)
-    static class StubModelsConfiguration {
+    public static class StubModelsConfiguration {
 
         @Bean
         @Primary

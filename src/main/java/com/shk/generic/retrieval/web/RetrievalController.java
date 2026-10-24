@@ -5,6 +5,8 @@ import com.shk.generic.retrieval.SearchQuery;
 import com.shk.generic.retrieval.SearchResult;
 import com.shk.generic.retrieval.answer.Answer;
 import com.shk.generic.retrieval.answer.AnswerService;
+import com.shk.generic.retrieval.options.RetrievalCatalog;
+import com.shk.generic.retrieval.options.RetrievalOptions;
 import com.shk.generic.retrieval.search.SearchService;
 import jakarta.validation.Valid;
 import org.jspecify.annotations.Nullable;
@@ -25,21 +27,41 @@ public class RetrievalController {
 
     private final SearchService searchService;
     private final AnswerService answerService;
+    private final RetrievalCatalog catalog;
 
-    public RetrievalController(SearchService searchService, AnswerService answerService) {
+    public RetrievalController(SearchService searchService, AnswerService answerService, RetrievalCatalog catalog) {
         this.searchService = searchService;
         this.answerService = answerService;
+        this.catalog = catalog;
     }
 
-    /** {@code GET /api/search?q=leave&categories=hr&categories=legal&scope=ANY&topK=5&minScore=0.3} */
+    /**
+     * {@code GET /api/search?q=leave&categories=hr&mode=hybrid&rerank=llm&diversify=mmr&explain=true}.
+     * Option values are case-insensitive; '-' and '_' are interchangeable (multi-query = MULTI_QUERY).
+     */
     @GetMapping("/search")
     public SearchResult search(@RequestParam("q") String query,
                                @RequestParam(required = false) @Nullable List<String> categories,
                                @RequestParam(defaultValue = "ANY") CategoryScope scope,
                                @RequestParam(required = false) @Nullable Integer topK,
-                               @RequestParam(required = false) @Nullable Double minScore) {
+                               @RequestParam(required = false) @Nullable Double minScore,
+                               @RequestParam(required = false) @Nullable String mode,
+                               @RequestParam(required = false) @Nullable String queryTransform,
+                               @RequestParam(required = false) @Nullable String rerank,
+                               @RequestParam(required = false) @Nullable String diversify,
+                               @RequestParam(required = false) @Nullable Integer candidates,
+                               @RequestParam(required = false) @Nullable Double mmrLambda,
+                               @RequestParam(required = false) @Nullable Boolean explain) {
+        RetrievalOptions options = RetrievalOptions.parse(mode, queryTransform, rerank, diversify, candidates,
+                mmrLambda, explain);
         return searchService.search(new SearchQuery(query,
-                categories == null ? null : new LinkedHashSet<>(categories), scope, topK, minScore));
+                categories == null ? null : new LinkedHashSet<>(categories), scope, topK, minScore, options));
+    }
+
+    /** Every retrieval option, whether it's enabled here, defaults, limits, and cost notes. */
+    @GetMapping("/search/modes")
+    public RetrievalCatalog.Catalog modes() {
+        return catalog.describe();
     }
 
     @PostMapping(path = "/ask", consumes = MediaType.APPLICATION_JSON_VALUE)

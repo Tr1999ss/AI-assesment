@@ -1,6 +1,7 @@
 package com.shk.generic.retrieval;
 
 import com.shk.generic.AbstractIntegrationTest;
+import com.shk.generic.TestTokens;
 import com.shk.generic.category.admin.CategoryAdminService;
 import com.shk.generic.ingestion.IngestionResult;
 import com.shk.generic.ingestion.IngestionService;
@@ -9,6 +10,7 @@ import com.shk.generic.ingestion.intake.IntakeChannel;
 import com.shk.generic.ingestion.intake.NamedByteArrayResource;
 import com.shk.generic.ingestion.intake.SourceFormat;
 import com.shk.generic.retrieval.mcp.RetrievalMcpTools;
+import com.shk.generic.security.Roles;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.assertj.MockMvcTester;
 import org.springframework.test.web.servlet.assertj.MvcTestResult;
 
@@ -109,7 +112,7 @@ class RetrievalTests extends AbstractIntegrationTest {
     void askAnswersFromSourcesWithCitations() {
         chatModel.reply("Employees receive twenty vacation days per year [1].");
 
-        MvcTestResult r = mvc.post().uri("/api/ask").contentType(MediaType.APPLICATION_JSON)
+        MvcTestResult r = mvc.post().uri("/api/ask").with(TestTokens.reader()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"question\":\"Annual leave policy: how many vacation days per year do employees receive?\",\"categories\":[\"" + people + "\"]}").exchange();
 
         assertThat(r).hasStatusOk();
@@ -123,20 +126,21 @@ class RetrievalTests extends AbstractIntegrationTest {
     void askModelOutageIs503WithoutLeakingDetails() {
         chatModel.fail(new IllegalStateException("401 key=sk-secret"));
 
-        assertThat(mvc.post().uri("/api/ask").contentType(MediaType.APPLICATION_JSON)
+        assertThat(mvc.post().uri("/api/ask").with(TestTokens.reader()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"question\":\"Annual leave policy: how many vacation days per year do employees receive?\",\"categories\":[\"" + people + "\"]}"))
                 .hasStatus(503).bodyText().doesNotContain("sk-secret");
     }
 
     @Test
+    @WithMockUser(roles = Roles.READER)
     void mcpToolsUseTheSameServices() {
         assertThat(mcpTools.listCategories()).extracting("name").contains(people, contracts, "general");
-        assertThat(mcpTools.search("expense policy: submit receipts within thirty days", List.of(contracts), true, 5).hits())
+        assertThat(mcpTools.search("expense policy: submit receipts within thirty days", List.of(contracts), true, 5, null, null, null, null, null, null).hits())
                 .extracting(SearchHit::documentId).containsExactly(expenses.documentId());
     }
 
     private MvcTestResult search(String query) {
-        return mvc.get().uri("/api/search?" + query).exchange();
+        return mvc.get().uri("/api/search?" + query).with(TestTokens.reader()).exchange();
     }
 
     private static IngestionRequest request(String filename, String text, List<String> categories) {

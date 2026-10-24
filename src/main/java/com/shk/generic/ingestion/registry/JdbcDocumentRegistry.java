@@ -23,14 +23,14 @@ public class JdbcDocumentRegistry implements DocumentRegistry {
     // "0 rows inserted" instead of an exception. If the conflicting row is still uncommitted,
     // Postgres waits for that transaction before deciding.
     private static final String INSERT_IF_ABSENT = """
-            INSERT INTO document_registry (id, content_hash, filename, format, channel, categories, status)
-            VALUES (:id, :contentHash, :filename, :format, :channel, :categories, :status)
+            INSERT INTO document_registry (id, content_hash, filename, format, channel, categories, status, ingested_by)
+            VALUES (:id, :contentHash, :filename, :format, :channel, :categories, :status, :ingestedBy)
             ON CONFLICT (content_hash) DO NOTHING
             """;
 
     private static final String SELECT = """
             SELECT id, content_hash, filename, format, channel, categories, primary_category, chunk_count,
-                   status, created_at, updated_at
+                   ingested_by, status, created_at, updated_at
             FROM document_registry
             """;
 
@@ -43,6 +43,7 @@ public class JdbcDocumentRegistry implements DocumentRegistry {
             toList(rs.getArray("categories")),
             rs.getString("primary_category"),
             rs.getObject("chunk_count", Integer.class),
+            rs.getString("ingested_by"),
             RegistrationStatus.valueOf(rs.getString("status")),
             rs.getTimestamp("created_at").toInstant(),
             rs.getTimestamp("updated_at").toInstant());
@@ -65,6 +66,7 @@ public class JdbcDocumentRegistry implements DocumentRegistry {
                     .param("channel", registration.channel().name())
                     .param("categories", registration.categories().toArray(String[]::new))
                     .param("status", RegistrationStatus.PENDING.name())
+                    .param("ingestedBy", registration.ingestedBy(), java.sql.Types.VARCHAR)
                     .update();
             if (inserted == 1) {
                 return new Claim(findById(id).orElseThrow(), true);

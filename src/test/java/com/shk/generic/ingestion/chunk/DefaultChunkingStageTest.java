@@ -136,7 +136,7 @@ class DefaultChunkingStageTest {
                 new NamedByteArrayResource(new byte[]{1}, "policy.md"), List.of(), Map.of());
         ExtractedDocument extracted = new ExtractedDocument(request, List.of(sections), "ignored");
         RegisteredDocument registration = new RegisteredDocument(documentId, "a".repeat(64), "policy.md",
-                SourceFormat.MARKDOWN, IntakeChannel.JSON_TEXT, List.of(), null, null, RegistrationStatus.PENDING,
+                SourceFormat.MARKDOWN, IntakeChannel.JSON_TEXT, List.of(), null, null, null, RegistrationStatus.PENDING,
                 Instant.now(), Instant.now());
         return new CategorizedDocument(extracted, registration,
                 CategorySet.of("legal", List.of("finance")), CategorySource.AI);

@@ -1,7 +1,5 @@
 package com.shk.generic.retrieval.search;
 
-import com.shk.generic.ingestion.chunk.ChunkMetadata;
-import com.shk.generic.ingestion.extract.DefaultExtractionStage;
 import com.shk.generic.retrieval.RetrievalUnavailableException;
 import com.shk.generic.retrieval.SearchHit;
 import org.jspecify.annotations.Nullable;
@@ -12,15 +10,10 @@ import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
-/** Searches the Spring AI {@link VectorStore} and maps chunk metadata into {@link SearchHit}s. */
+/** The semantic leg: searches the Spring AI {@link VectorStore} (cosine similarity). */
 @Component
 public class VectorStoreChunkSearcher implements ChunkSearcher {
-
-    /** Written by Spring AI's PDF and Markdown readers. */
-    static final String PAGE_NUMBER = "page_number";
-    static final String TITLE = "title";
 
     private final VectorStore vectorStore;
 
@@ -43,31 +36,6 @@ public class VectorStoreChunkSearcher implements ChunkSearcher {
         } catch (RuntimeException e) {
             throw new RetrievalUnavailableException("Search failed: " + e.getMessage(), e);
         }
-        return documents.stream().map(VectorStoreChunkSearcher::toHit).toList();
-    }
-
-    static SearchHit toHit(Document document) {
-        Map<String, Object> m = document.getMetadata();
-        return new SearchHit(
-                document.getId(),
-                string(m.get(ChunkMetadata.DOCUMENT_ID), ""),
-                string(m.get(DefaultExtractionStage.SOURCE), ""),
-                string(m.get(TITLE), null),
-                integer(m.get(PAGE_NUMBER)),
-                m.get(ChunkMetadata.CATEGORIES) instanceof List<?> list
-                        ? list.stream().map(String::valueOf).toList()
-                        : List.of(),
-                string(m.get(ChunkMetadata.PRIMARY_CATEGORY), null),
-                integer(m.get(ChunkMetadata.CHUNK_INDEX)) == null ? 0 : integer(m.get(ChunkMetadata.CHUNK_INDEX)),
-                document.getScore() == null ? 0.0 : document.getScore(),
-                document.getText() == null ? "" : document.getText());
-    }
-
-    private static String string(@Nullable Object value, String fallback) {
-        return value == null ? fallback : value.toString();
-    }
-
-    private static @Nullable Integer integer(@Nullable Object value) {
-        return value instanceof Number n ? n.intValue() : null;
+        return documents.stream().map(ChunkHitMapper::toHit).toList();
     }
 }

@@ -1,0 +1,13 @@
+{
+  "pages": [
+    { "file": "README.md" },
+    { "file": "../pom.xml" },
+    { "file": "docs/../../secret.md" },
+    { "file": "secret.txt" },
+    { "file": "docs/missing.md" },
+    { "file": "docs/ok.md", "slug": "assets/ok" },
+    { "file": "docs/ok.md", "slug": "../ok" },
+    { "file": "docs/ok.md" },
+    { "file": "docs/ok.md", "slug": "again" }
+  ]
+}

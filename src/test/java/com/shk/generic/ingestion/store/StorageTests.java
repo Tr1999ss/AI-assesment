@@ -1,6 +1,7 @@
 package com.shk.generic.ingestion.store;
 
 import com.shk.generic.AbstractIntegrationTest;
+import com.shk.generic.TestTokens;
 import com.shk.generic.ingestion.IngestionResult;
 import com.shk.generic.ingestion.IngestionService;
 import com.shk.generic.ingestion.IngestionStatus;
@@ -116,7 +117,7 @@ class StorageTests extends AbstractIntegrationTest {
         String text = unique("Outage test.");
         embeddingModel.fail(new IllegalStateException("embeddings 429, key=sk-secret"));
 
-        assertThat(mvc.post().uri("/api/ingest/text").contentType(MediaType.APPLICATION_JSON)
+        assertThat(mvc.post().uri("/api/ingest/text").with(TestTokens.editor()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"outage\",\"text\":\"" + text + "\",\"categories\":[\"hr\"]}"))
                 .hasStatus(503).bodyText().doesNotContain("sk-secret");
         assertThat(rowsWithFilename("outage.txt")).isZero();

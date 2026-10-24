@@ -3,6 +3,7 @@ package com.shk.generic.ingestion.category;
 import com.shk.generic.category.CategoryDefinition;
 import com.shk.generic.category.CategoryRegistry;
 import com.shk.generic.AbstractIntegrationTest;
+import com.shk.generic.TestTokens;
 import com.shk.generic.ingestion.IngestionResult;
 import com.shk.generic.ingestion.IngestionService;
 import com.shk.generic.ingestion.IngestionStatus;
@@ -61,7 +62,7 @@ class CategorizationTests extends AbstractIntegrationTest {
         String body = """
                 {"title":"order","text":"%s","categories":["finance","hr","legal"]}""".formatted(unique());
 
-        MvcTestResult result = mvc.post().uri("/api/ingest/text")
+        MvcTestResult result = mvc.post().uri("/api/ingest/text").with(TestTokens.editor())
                 .contentType(MediaType.APPLICATION_JSON).content(body).exchange();
 
         assertThat(result).hasStatusOk();
@@ -76,7 +77,7 @@ class CategorizationTests extends AbstractIntegrationTest {
         String bad = """
                 {"title":"bad","text":"%s","categories":["hr","payroll"]}""".formatted(text);
 
-        assertThat(mvc.post().uri("/api/ingest/text").contentType(MediaType.APPLICATION_JSON).content(bad))
+        assertThat(mvc.post().uri("/api/ingest/text").with(TestTokens.editor()).contentType(MediaType.APPLICATION_JSON).content(bad))
                 .hasStatus(400).bodyText().contains("payroll").contains("general");
         assertThat(rowsWithFilename("bad.txt")).isZero();
 
@@ -115,7 +116,7 @@ class CategorizationTests extends AbstractIntegrationTest {
         String text = unique();
         chatModel.fail(new IllegalStateException("upstream timeout, key=sk-secret"));
 
-        assertThat(mvc.post().uri("/api/ingest/text").contentType(MediaType.APPLICATION_JSON)
+        assertThat(mvc.post().uri("/api/ingest/text").with(TestTokens.editor()).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"outage\",\"text\":\"" + text + "\"}"))
                 .hasStatus(503).bodyText().doesNotContain("sk-secret");
         assertThat(rowsWithFilename("outage.txt")).isZero();
